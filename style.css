@@ -1,0 +1,17 @@
+body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+
+#tabs { display: flex; gap: 0.5rem; border-bottom: 2px solid #ddd; margin-bottom: 1.5rem; }
+.tab { background: none; border: none; padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer; }
+.tab.active { border-bottom: 3px solid #2a7f62; font-weight: bold; margin-bottom: -2px; }
+
+details { margin: 0.3rem 0; }
+summary { cursor: pointer; padding: 0.25rem 0; }
+.level-goal > summary { font-size: 1.15rem; font-weight: bold; }
+.level-initiative { margin-left: 1.25rem; }
+.level-sub { margin-left: 1.25rem; }
+ul { margin-left: 1.25rem; }
+
+#search { width: 100%; padding: 0.6rem 0.8rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+#search-count { color: #555; font-size: 0.9rem; min-height: 1.2rem; margin: 0.4rem 0 1rem; }
+
+mark { background: #ffe066; color: inherit; padding: 0 1px; border-radius: 2px; }

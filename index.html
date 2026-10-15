@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MN 2026 Climate Action Framework Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>MN 2026 Climate Action Framework Dashboard</h1>
+
+  <nav id="tabs">
+    <button class="tab active" data-target="intro">Overview</button>
+    <button class="tab" data-target="explore">Explore the action steps</button>
+  </nav>
+
+  <section id="intro" class="panel">
+    <div id="chart"></div>
+  </section>
+
+  <section id="explore" class="panel" hidden>
+    <input type="search" id="search" placeholder="Search action steps...">
+    <p id="search-count"></p>
+    <div id="outline"></div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
