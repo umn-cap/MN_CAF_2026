@@ -1,27 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>MN 2026 Climate Action Framework Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026 Minnesota Climate Action Framework Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>MN 2026 Climate Action Framework Dashboard</h1>
+  <div class="shell">
 
-  <nav id="tabs">
-    <button class="tab active" data-target="intro">Overview</button>
-    <button class="tab" data-target="explore">Explore the action steps</button>
-  </nav>
+    <!-- Left rail: search on top, then the Home tab and the 7 goal tabs (built by script.js) -->
+    <aside class="rail">
+      <div class="search-wrap">
+        <label class="visually-hidden" for="search">Search all goals</label>
+        <input type="search" id="search" placeholder="Search all goals" autocomplete="off">
+      </div>
+      <nav id="nav" role="tablist" aria-label="Goals" aria-orientation="vertical"></nav>
+    </aside>
 
-  <section id="intro" class="panel">
-    <div id="chart"></div>
-  </section>
+    <main class="main">
+      <!-- Shows while a search is active and you are looking at a goal or Home -->
+      <div id="search-banner" class="banner" hidden></div>
 
-  <section id="explore" class="panel" hidden>
-    <input type="search" id="search" placeholder="Search action steps...">
-    <p id="search-count"></p>
-    <div id="outline"></div>
-  </section>
+      <!-- HOME TAB -->
+      <section id="view-home" class="view home" role="tabpanel" aria-labelledby="tab-home">
+        <h1>2026 Minnesota Climate Action Framework Dashboard</h1>
+
+        <!-- EXPLAINER: edit the text inside. Keep it in a div with separate <p> and <ul> blocks
+             (a <ul> can't go inside a <p>, which is what made the text turn black) -->
+        <div class="explainer">
+          <p>First created in 2022 and updated in 2026, <a href="https://climate.state.mn.us/minnesotas-climate-action-framework">the Minnesota Climate Action Framework (CAF)</a> is the state’s plan to reduce carbon pollution and prepare Minnesota’s communities for climate change in ways that benefit all Minnesotans. The plan outlines 374 action steps across 7 different goals to achieve climate resilience in Minnesota.</p>
+          <p><a href="https://climate.umn.edu/">The University of Minnesota Climate Adaptation Partnership</a> created the CAF dashboard to help Minnesotans explore the CAF goals and action steps. Use this dashboard to:</p>
+          <ul>
+            <li>Explore all 7 goals and their respective initiatives, sub-initiatives, and action steps in the goal tabs.</li>
+            <li>Search for terms across all 7 goals in the search pane.</li>
+          </ul>
+          <p><i>This is not an official state resource. Always reference the original state documents.</i></p>
+        </div>
+
+        <!-- LINK HOLDERS: replace the href and the link text in each -->
+        <p class="home-links">
+          <a class="home-link" href="https://climate.state.mn.us/minnesotas-climate-action-framework">Official 2026 MN Climate Action Framework</a>
+        </p>
+
+        <h2 class="section-title">Action steps by goal</h2>
+        <div id="treemap" class="treemap" role="group" aria-label="Goals sized by number of action steps">
+          <p class="loading">Loading data…</p>
+        </div>
+        <p class="caption">Tile size shows how many action steps each goal has. It does not show priority. Select a goal to explore it.</p>
+      </section>
+
+      <!-- SEARCH RESULTS (not a tab; appears while typing) -->
+      <section id="view-results" class="view results" aria-live="polite" hidden></section>
+
+      <!-- ONE PANEL PER GOAL (built by script.js) -->
+      <div id="goal-views"></div>
+    </main>
+
+  </div>
+
+  <!-- Tooltip shown when hovering a treemap tile (filled in by script.js) -->
+  <div id="tooltip" class="tooltip" aria-hidden="true" hidden></div>
 
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
   <script src="script.js"></script>
