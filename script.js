@@ -4,7 +4,7 @@
 
 // ---------- Things you may want to edit ----------
 
-const DATA_FILE = "CAF Action Steps - CAF Action Steps.csv";
+const DATA_FILE = "Data/CAF Action Steps - CAF Action Steps.csv";
 
 // One color per goal, in the order the goals first appear in the CSV.
 // Each color is used for the goal's tab, treemap tile, and card tints.
@@ -31,12 +31,28 @@ const GOAL_DESCRIPTIONS = [
   "Build and maintain healthy, comfortable, safe, efficient, and resilient buildings and homes that cost less to operate, pollute very little, and support grid stability."
 ];
 
+// The two tags on each action step. "column" is the CSV column (1 = tagged, 0 = not).
+// "help" is the hover text on the matching filter pill. Tag colors are set in style.css.
+const TAGS = {
+  adaptation: {
+    column: "Adaptation",
+    label: "Adaptation",
+    help: "Adaptation: Taking action to prepare for and adjust to both the current and projected impacts from climate change. For both natural and built systems, humans may intervene to help adjustment."
+  },
+  mitigation: {
+    column: "Mitigation",
+    label: "Mitigation",
+    help: "Mitigation: A human intervention to reduce emissions or enhance the removal of a greenhouse gas from the atmosphere"
+  }
+};
+
 // ---------- State ----------
 
 const state = {
   view: "home",          // "home" or "goal-1" ... "goal-7"
   query: "",             // lowercase search text (empty when no active search)
   display: "",           // search text as typed, for showing back to the user
+  filter: "all",         // "all", "adaptation", or "mitigation"
   showResults: false,    // true while the results view should be on screen
   pendingTarget: null,   // element id to scroll to after a result is clicked
   expandedGroups: new Set()
@@ -51,9 +67,11 @@ const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").match
 // ---------- Load the data ----------
 
 d3.csv(DATA_FILE).then(data => {
+  checkTagColumns(data);
   goals = buildGoals(data);
   buildNav();
   buildGoalViews();
+  applyFilterToPanels();
   buildSearchIndex();
   setupSearch();
   watchTreemap();
@@ -64,13 +82,22 @@ d3.csv(DATA_FILE).then(data => {
   renderView();
 }).catch(showLoadError);
 
+function showNotice(message) {
+  document.querySelector(".main").prepend(el("div", "banner error", message));
+}
+
 function showLoadError(err) {
   console.error(err);
-  const box = el("div", "banner error",
-    `Couldn't load "${DATA_FILE}". Check that the file name matches exactly and that the page is open through Live Server.`);
-  document.querySelector(".main").prepend(box);
+  showNotice(`Couldn't load "${DATA_FILE}". Check that the file name matches exactly and that the page is open through Live Server.`);
   const loading = document.querySelector(".loading");
   if (loading) loading.remove();
+}
+
+function checkTagColumns(data) {
+  const missing = Object.values(TAGS).map(t => t.column).filter(c => !data.columns.includes(c));
+  if (missing.length) {
+    showNotice(`The data file has no "${missing.join('" or "')}" column, so those tags and the filter won't work. Check the column names.`);
+  }
 }
 
 // ---------- Small helpers ----------
@@ -93,9 +120,49 @@ function plural(n, one, many) {
   return n === 1 ? one : (many || one + "s");
 }
 
+function isOne(value) {
+  return String(value == null ? "" : value).trim() === "1";
+}
+
+// The summary line under each goal title. When a filter is on, it says so at the end.
+function metaText(nInit, nSub, nSteps) {
+  const base = `${nInit} ${plural(nInit, "initiative")}, ${nSub} ${plural(nSub, "sub-initiative")}, ${nSteps} action ${plural(nSteps, "step")}`;
+  return state.filter === "all" ? base : `${base}, within ${TAGS[state.filter].label} filter`;
+}
+
+// The little Adaptation / Mitigation pills for an item that has adaptation and mitigation flags
+function makeTags(item) {
+  const wrap = el("span", "tags");
+  Object.keys(TAGS).forEach(key => {
+    if (item[key]) {
+      wrap.append(el("span", "tag tag-" + key, TAGS[key].label));
+    }
+  });
+  return wrap;
+}
+
 // ---------- Turn the flat CSV into goals > initiatives > sub-initiatives > steps ----------
 
-function buildGoals(data) {
+// Compares text the way people count: "7.1.1.2" comes before "7.1.1.10"
+function naturalCompare(a, b) {
+  return String(a || "").localeCompare(String(b || ""), undefined, { numeric: true });
+}
+
+function buildGoals(rawData) {
+  // Goals keep the order they appear in the CSV (that order also sets their colors).
+  // Within each goal, initiatives, sub-initiatives and action steps are put in number order,
+  // so the site shows them correctly even if the CSV was sorted as text.
+  const goalOrder = new Map();
+  rawData.forEach(d => {
+    if (!goalOrder.has(d["Goal Full"])) goalOrder.set(d["Goal Full"], goalOrder.size);
+  });
+  const data = rawData.slice().sort((a, b) =>
+    goalOrder.get(a["Goal Full"]) - goalOrder.get(b["Goal Full"])
+    || naturalCompare(a["Initiative Full"], b["Initiative Full"])
+    || naturalCompare(a["Sub-Initiative Full"], b["Sub-Initiative Full"])
+    || naturalCompare(a["Action Step Full"], b["Action Step Full"])
+  );
+
   return Array.from(d3.group(data, d => d["Goal Full"]), ([goalFull, goalRows], i) => ({
     index: i,
     id: "goal-" + (i + 1),
@@ -112,10 +179,11 @@ function buildGoals(data) {
       subs: Array.from(d3.group(initRows, d => d["Sub-Initiative Full"]), ([subFull, subRows], k) => ({
         key: `g${i}-i${j}-s${k}`,
         full: subFull,
-        steps: subRows.map((row, m) => ({
-          key: `g${i}-i${j}-s${k}-a${m}`,
-          text: row["Action Step Full"]
-        }))
+        steps: subRows.map((row, m) => {
+          const step = { key: `g${i}-i${j}-s${k}-a${m}`, text: row["Action Step Full"] };
+          Object.keys(TAGS).forEach(tagKey => { step[tagKey] = isOne(row[TAGS[tagKey].column]); });
+          return step;
+        })
       }))
     }))
   }));
@@ -295,13 +363,8 @@ function buildGoalViews() {
     const h2 = el("h2");
     h2.id = g.key;
     h2.append(label(g.full));
-    const nInit = g.initiatives.length;
     const nSub = d3.sum(g.initiatives, init => init.subs.length);
-    head.append(
-      h2,
-      el("p", "goal-meta",
-        `${nInit} ${plural(nInit, "initiative")}, ${nSub} ${plural(nSub, "sub-initiative")}, ${g.count} action ${plural(g.count, "step")}`)
-    );
+    head.append(h2, el("p", "goal-meta", metaText(g.initiatives.length, nSub, g.count)));
     section.append(head);
 
     // Expand / collapse buttons
@@ -331,11 +394,16 @@ function buildGoalViews() {
         rowSummary.append(label(sub.full), el("span", "count", `${sub.steps.length} ${plural(sub.steps.length, "step")}`));
         row.append(rowSummary);
 
+        // Action steps: a table-like list, each row with its Adaptation / Mitigation tags
         const list = el("ul", "steps");
         sub.steps.forEach(step => {
-          const li = el("li", null, step.text);
+          const li = el("li");
           li.id = step.key;
-          li.dataset.text = step.text;
+          li.dataset.tags = Object.keys(TAGS).filter(k => step[k]).join(" ");
+
+          const text = el("span", "step-text", step.text);
+          text.dataset.text = step.text;
+          li.append(text, makeTags(step));
           list.append(li);
         });
         row.append(list);
@@ -349,19 +417,76 @@ function buildGoalViews() {
   });
 }
 
+// ---------- Filter: Adaptation / Mitigation ----------
+
+function isSearching() {
+  return state.query !== "" || state.filter !== "all";
+}
+
+// Show only the action steps that pass the filter. Rows and cards left empty are hidden,
+// the step counts are updated, and the row striping is redone for the visible rows.
+function applyFilterToPanels() {
+  goals.forEach(g => {
+    const panel = document.getElementById("view-" + g.id);
+    let nInit = 0;
+    let nSub = 0;
+    let nSteps = 0;
+
+    panel.querySelectorAll(".card").forEach(card => {
+      let cardSteps = 0;
+      let cardSubs = 0;
+
+      card.querySelectorAll(":scope > .sub").forEach(row => {
+        let rowSteps = 0;
+
+        row.querySelectorAll(":scope > .steps > li").forEach(li => {
+          const tags = (li.dataset.tags || "").split(" ");
+          const show = state.filter === "all" || tags.includes(state.filter);
+          li.hidden = !show;
+          li.classList.remove("first", "alt");
+          if (show) {
+            if (rowSteps === 0) li.classList.add("first");
+            if (rowSteps % 2 === 1) li.classList.add("alt");
+            rowSteps++;
+          }
+        });
+
+        row.hidden = rowSteps === 0;
+        row.querySelector(":scope > summary > .count").textContent = `${rowSteps} ${plural(rowSteps, "step")}`;
+        if (rowSteps > 0) {
+          cardSubs++;
+          cardSteps += rowSteps;
+        }
+      });
+
+      card.hidden = cardSteps === 0;
+      card.querySelector(":scope > summary > .count").textContent = `${cardSteps} ${plural(cardSteps, "step")}`;
+      if (cardSteps > 0) {
+        nInit++;
+        nSub += cardSubs;
+        nSteps += cardSteps;
+      }
+    });
+
+    panel.querySelector(".goal-meta").textContent = metaText(nInit, nSub, nSteps);
+  });
+}
+
 // ---------- Search ----------
 
 // One entry for every searchable piece of text
 function buildSearchIndex() {
   searchIndex = [];
   goals.forEach((g, gi) => {
-    searchIndex.push({ goal: gi, key: g.key, text: g.full, where: "Goal" });
+    searchIndex.push({ goal: gi, key: g.key, type: "goal", text: g.full, where: "Goal" });
     g.initiatives.forEach(init => {
-      searchIndex.push({ goal: gi, key: init.key, text: init.full, where: "Initiative" });
+      searchIndex.push({ goal: gi, key: init.key, type: "initiative", text: init.full, where: "Initiative" });
       init.subs.forEach(sub => {
-        searchIndex.push({ goal: gi, key: sub.key, text: sub.full, where: "Sub-initiative in " + init.full });
+        searchIndex.push({ goal: gi, key: sub.key, type: "sub", text: sub.full, where: "Sub-initiative in " + init.full });
         sub.steps.forEach(step => {
-          searchIndex.push({ goal: gi, key: step.key, text: step.text, where: "Action step in " + sub.full });
+          const item = { goal: gi, key: step.key, type: "step", text: step.text, where: "Action step in " + sub.full };
+          Object.keys(TAGS).forEach(k => { item[k] = step[k]; });
+          searchIndex.push(item);
         });
       });
     });
@@ -369,32 +494,54 @@ function buildSearchIndex() {
   searchIndex.forEach(item => { item.lower = item.text.toLowerCase(); });
 }
 
-function matchesFor(query) {
-  return searchIndex.filter(item => item.lower.includes(query));
+// Everything that matches the typed text and the filter.
+// With a filter on, only action steps are listed (headings don't carry tags).
+function currentHits() {
+  const q = state.query;
+  return searchIndex.filter(item => {
+    if (state.filter !== "all" && !(item.type === "step" && item[state.filter])) return false;
+    return !q || item.lower.includes(q);
+  });
 }
 
 function setupSearch() {
   const input = document.getElementById("search");
-
-  input.addEventListener("input", () => {
-    const typed = input.value.trim();
-    state.display = typed;
-    state.query = typed.length >= 2 ? typed.toLowerCase() : "";
-    state.showResults = state.query !== "";
-    state.expandedGroups.clear();
-    applyHighlights();
-    renderView();
-  });
-
+  input.addEventListener("input", onSearchChange);
   input.addEventListener("keydown", e => {
     if (e.key === "Escape") clearSearch();
   });
+  document.querySelectorAll('input[name="filter"]').forEach(radio => {
+    radio.addEventListener("change", onSearchChange);
+  });
+
+  // Hovering a filter pill shows what Adaptation / Mitigation mean
+  Object.keys(TAGS).forEach(key => {
+    const pill = document.querySelector(".seg-" + key);
+    if (pill) pill.title = TAGS[key].help;
+  });
+}
+
+function selectedFilter() {
+  const checked = document.querySelector('input[name="filter"]:checked');
+  return checked ? checked.value : "all";
+}
+
+function onSearchChange() {
+  const typed = document.getElementById("search").value.trim();
+  state.display = typed;
+  state.query = typed.length >= 2 ? typed.toLowerCase() : "";
+  state.filter = selectedFilter();
+  state.showResults = isSearching();
+  state.expandedGroups.clear();
+  applyFilterToPanels();
+  applyHighlights();
+  renderView();
 }
 
 function clearSearch() {
-  const input = document.getElementById("search");
-  input.value = "";
-  input.dispatchEvent(new Event("input"));
+  document.getElementById("search").value = "";
+  document.querySelector('input[name="filter"][value="all"]').checked = true;
+  onSearchChange();
 }
 
 // Wrap each occurrence of the query in <mark>. Works from the saved original text,
@@ -419,7 +566,7 @@ function highlight(node, query) {
   node.append(text.slice(pos));
 }
 
-// Highlight in every goal panel, and open only the sections that contain a match
+// Highlight in every goal panel, and open only the sections that contain a visible match
 function applyHighlights() {
   const q = state.query;
 
@@ -432,7 +579,9 @@ function applyHighlights() {
     }
     const own = d.querySelector(":scope > summary > [data-text]");
     const matchBelow = Array.from(d.querySelectorAll("[data-text]"))
-      .some(node => node !== own && node.dataset.text.toLowerCase().includes(q));
+      .some(node => node !== own
+        && !node.closest("li[hidden], details[hidden]")
+        && node.dataset.text.toLowerCase().includes(q));
     d.open = matchBelow;
   });
 }
@@ -443,9 +592,8 @@ function renderView() {
   if (!goals.length) return;
 
   state.view = currentViewId();
-  const q = state.query;
-  const hits = q ? matchesFor(q) : [];
-  const showingResults = Boolean(q) && state.showResults;
+  const hits = isSearching() ? currentHits() : [];
+  const showingResults = isSearching() && state.showResults;
 
   document.getElementById("view-results").hidden = !showingResults;
   document.getElementById("view-home").hidden = showingResults || state.view !== "home";
@@ -479,17 +627,30 @@ function updateNav(hits, showingResults) {
     const badge = btn.querySelector(".nav-badge");
     const gi = goals.findIndex(g => g.id === id);
     const n = gi >= 0 ? (counts.get(gi) || 0) : 0;
-    badge.hidden = !(state.query && n > 0);
+    badge.hidden = !(isSearching() && n > 0);
     badge.textContent = n;
     badge.title = `${n} ${plural(n, "match", "matches")}`;
   });
+}
+
+// "12 matches for “transit”", "187 Adaptation action steps", or both combined
+function summarize(n) {
+  const filterName = state.filter === "all" ? "" : TAGS[state.filter].label;
+  if (state.query) {
+    const base = n === 0
+      ? `No matches for “${state.display}”`
+      : `${n} ${plural(n, "match", "matches")} for “${state.display}”`;
+    return filterName ? `${base} among ${filterName} action steps` : base;
+  }
+  return `${n} ${filterName} action ${plural(n, "step")}`;
 }
 
 function updateBanner(hits, showingResults) {
   const banner = document.getElementById("search-banner");
   banner.replaceChildren();
 
-  if (!state.query || showingResults) {
+  // No banner on the results view itself, or on Home (the goal pages are where it helps)
+  if (!isSearching() || showingResults || state.view === "home") {
     banner.hidden = true;
     return;
   }
@@ -505,12 +666,16 @@ function updateBanner(hits, showingResults) {
   });
   clear.addEventListener("click", clearSearch);
 
-  banner.append(
-    el("span", "banner-text",
-      `${hits.length} ${plural(hits.length, "match", "matches")} for “${state.display}”, highlighted in each goal.`),
-    back,
-    clear
-  );
+  let message;
+  if (state.filter !== "all") {
+    const n = hits.length;
+    const matching = state.query ? ` matching “${state.display}”` : "";
+    const how = state.query ? "highlighted" : "shown";
+    message = `Results filtered to ${n} ${TAGS[state.filter].label} action ${plural(n, "step")}${matching}, ${how} in each goal.`;
+  } else {
+    message = `${summarize(hits.length)}, highlighted in each goal.`;
+  }
+  banner.append(el("span", "banner-text", message), back, clear);
 }
 
 // ---------- Search results view ----------
@@ -521,14 +686,10 @@ function renderResults(hits) {
   const host = document.getElementById("view-results");
   host.replaceChildren();
 
-  const title = el("h2", "results-title");
-  title.textContent = hits.length === 0
-    ? `No matches for “${state.display}”`
-    : `${hits.length} ${plural(hits.length, "match", "matches")} for “${state.display}”`;
-  host.append(title);
+  host.append(el("h2", "results-title", summarize(hits.length)));
 
   if (hits.length === 0) {
-    host.append(el("p", "muted", "Try a shorter word or check the spelling."));
+    host.append(el("p", "muted", "Try a shorter word, check the spelling, or change the filter."));
     return;
   }
 
@@ -555,6 +716,7 @@ function renderResults(hits) {
       text.dataset.text = hit.text;
       highlight(text, state.query);
       btn.append(el("span", "hit-where", hit.where), text);
+      if (hit.type === "step") btn.append(makeTags(hit));
       btn.addEventListener("click", () => openHit(hit));
       section.append(btn);
     });

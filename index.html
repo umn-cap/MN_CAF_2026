@@ -18,7 +18,18 @@
       <div class="search-wrap">
         <label class="visually-hidden" for="search">Search all goals</label>
         <input type="search" id="search" placeholder="Search all goals" autocomplete="off">
+
+        <!-- Filter: limits results (and the goal tabs) to Adaptation or Mitigation action steps -->
+        <fieldset class="filter">
+          <legend class="filter-legend">Filter action steps</legend>
+          <div class="filter-options">
+            <label class="seg"><input type="radio" name="filter" value="all" checked><span>All</span></label>
+            <label class="seg seg-adaptation"><input type="radio" name="filter" value="adaptation"><span>Adaptation</span></label>
+            <label class="seg seg-mitigation"><input type="radio" name="filter" value="mitigation"><span>Mitigation</span></label>
+          </div>
+        </fieldset>
       </div>
+
       <nav id="nav" role="tablist" aria-label="Goals" aria-orientation="vertical"></nav>
     </aside>
 
@@ -34,12 +45,13 @@
              (a <ul> can't go inside a <p>, which is what made the text turn black) -->
         <div class="explainer">
           <p>First created in 2022 and updated in 2026, <a href="https://climate.state.mn.us/minnesotas-climate-action-framework">the Minnesota Climate Action Framework (CAF)</a> is the state’s plan to reduce carbon pollution and prepare Minnesota’s communities for climate change in ways that benefit all Minnesotans. The plan outlines 374 action steps across 7 different goals to achieve climate resilience in Minnesota.</p>
-          <p><a href="https://climate.umn.edu/">The University of Minnesota Climate Adaptation Partnership</a> created the CAF dashboard to help Minnesotans explore the CAF goals and action steps. Use this dashboard to:</p>
+          <p><a href="https://climate.umn.edu/">The University of Minnesota Climate Adaptation Partnership</a> (MCAP) created the CAF Dashboard to help Minnesotans explore the CAF goals and action steps. Use this dashboard to:</p>
           <ul>
             <li>Explore all 7 goals and their respective initiatives, sub-initiatives, and action steps in the goal tabs.</li>
-            <li>Search for terms across all 7 goals in the search pane.</li>
+            <li>Search for terms across all 7 goals in the search bar.</li>
+            <li>Filter action steps by adaptation or mitigation categories in the filter bar.</li>
           </ul>
-          <p><i>This is not an official state resource. Always reference the original state documents.</i></p>
+          <p><i>This is not an official state resource. Adaptation and mitigation filters were categorized by MCAP and are not part of the original CAF. Always reference the original state documents.</i></p>
         </div>
 
         <!-- LINK HOLDERS: replace the href and the link text in each -->
