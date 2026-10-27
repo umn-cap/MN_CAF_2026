@@ -328,6 +328,9 @@ body {
   letter-spacing: -0.025em;
 }
 
+/* Same maroon as the header bar */
+.accent-word { color: #6d001f; }
+
 .explainer {
   max-width: 80ch;
   margin: 0 0 1rem;
