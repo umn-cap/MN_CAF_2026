@@ -75,6 +75,66 @@ body {
   padding: 2.5rem clamp(1.25rem, 4vw, 4rem) 4rem;
 }
 
+/* ---------- University header and footer ---------- */
+
+.site-header {
+  display: flex;
+  align-items: center;
+  min-height: 4rem;
+  padding: 0.6rem 1rem;
+  background: #6d001f;
+}
+
+.site-header-link { display: block; }
+
+.site-header-link:focus-visible { outline-color: #fff; }
+
+.site-header-logo {
+  display: block;
+  width: auto;
+  height: 2.75rem;
+}
+
+.site-footer {
+  padding: 1.75rem 1rem;
+  color: var(--ink);
+  background: #d5d6d2;
+}
+
+/* Logo and text sit side by side, centered as a group on the page */
+.footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem 2rem;
+}
+
+.footer-logo-link {
+  display: block;
+  flex: none;
+}
+
+.footer-logo {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: 4.5rem;
+}
+
+.footer-legal {
+  max-width: 80ch;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 /* ---------- Search box ---------- */
 
 #search {

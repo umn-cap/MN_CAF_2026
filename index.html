@@ -11,6 +11,13 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- University header: maroon bar with the logo at the top left -->
+  <header class="site-header">
+    <a class="site-header-link" href="https://www.umn.edu/">
+      <img class="site-header-logo" src="Images/M-gld-wht.svg" alt="University of Minnesota logo">
+    </a>
+  </header>
+
   <div class="shell">
 
     <!-- Left rail: search on top, then the Home tab and the 7 goal tabs (built by script.js) -->
@@ -60,7 +67,7 @@
         </p>
 
         <h2 class="section-title">Action steps by goal</h2>
-        <div id="treemap" class="treemap" role="group" aria-label="Goals sized by number of action steps">
+        <div id="treemap" class="treemap" role="group" aria-label="Tree map data visualization displaying the 7 CAF goals. Each goal is a different colored square, sized by the total number of action steps within that goal. Goals, from most to least action steps: Efficient and resilient buildings, Healthy lives and communities, Climate-smart natural and working lands, Resilient communities, Clean transportation, Clean economy, Clean energy.">
           <p class="loading">Loading data…</p>
         </div>
         <p class="caption">Tile size shows how many action steps each goal has. It does not show priority. Select a goal to explore it.</p>
@@ -74,6 +81,16 @@
     </main>
 
   </div>
+
+  <!-- University footer: logo on the left, copyright text beside it -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <a class="footer-logo-link" href="https://climate.umn.edu/">
+        <img class="footer-logo" src="Images/CAP_M-wdmk-cmyk-mar-blk.png" alt="Climate Adaptation Partnership, University of Minnesota logo">
+      </a>
+      <p class="footer-legal">© 2026, Regents of the University of Minnesota. University of Minnesota is an equal opportunity educator and employer. In accordance with the Americans with Disabilities Act, this publication/material is available in alternative formats upon request. Direct requests to 612-624-0772.</p>
+    </div>
+  </footer>
 
   <!-- Tooltip shown when hovering a treemap tile (filled in by script.js) -->
   <div id="tooltip" class="tooltip" aria-hidden="true" hidden></div>
