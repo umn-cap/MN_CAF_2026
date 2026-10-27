@@ -2,6 +2,8 @@
    MN CAF 2026 site
    Each goal sets one CSS variable, --goal (from GOAL_COLORS in script.js).
    Tints, borders and tiles are all derived from it.
+
+   This is the newest css file
    ===================================================================== */
 
 :root {
