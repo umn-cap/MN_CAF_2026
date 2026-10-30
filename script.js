@@ -2,21 +2,20 @@
 // MN CAF 2026 site
 // =====================================================================
 
-// ---------- Things you may want to edit ----------
-
 const DATA_FILE = "Data/CAF Action Steps - CAF Action Steps.csv";
 
 // One color per goal, in the order the goals first appear in the CSV.
 // Each color is used for the goal's tab, treemap tile, and card tints.
 // Keep them dark enough for white text (the tab and tile text is white).
+
 const GOAL_COLORS = [
-  "#1f6fb2", // 1st goal in the file: blue
-  "#4f7a1d", // 2nd: green
-  "#8a4fa0", // 3rd: purple
-  "#c25100", // 4th: orange
-  "#b83a4b", // 5th: rose
-  "#0f7c7c", // 6th: teal
-  "#7a5230"  // 7th: brown
+  "#332288", // 1st goal in the file
+  "#117733", // 2nd
+  "#44AA99", // 3rd
+  "#1E87BB", // 4th
+  "#EA9927", // 5th
+  "#CC6677", // 6th
+  "#882255", // 7th
 ];
 
 // Shown in the tooltip when hovering a treemap tile.
@@ -514,11 +513,41 @@ function setupSearch() {
     radio.addEventListener("change", onSearchChange);
   });
 
-  // Hovering a filter pill shows what Adaptation / Mitigation mean
+  // Hovering (or tabbing to) a filter pill shows what Adaptation / Mitigation mean, instantly
   Object.keys(TAGS).forEach(key => {
     const pill = document.querySelector(".seg-" + key);
-    if (pill) pill.title = TAGS[key].help;
+    if (!pill) return;
+    const input = pill.querySelector("input");
+    input.setAttribute("aria-description", TAGS[key].help);
+    pill.addEventListener("mouseenter", () => showPillTip(pill, key));
+    pill.addEventListener("mouseleave", hideTooltip);
+    input.addEventListener("focus", () => showPillTip(pill, key));
+    input.addEventListener("blur", hideTooltip);
   });
+}
+
+// Shows the shared tooltip just below a filter pill
+function showPillTip(pill, key) {
+  const tip = document.getElementById("tooltip");
+  const tag = TAGS[key];
+  tip.replaceChildren(
+    el("strong", null, tag.label),
+    el("span", null, tag.help.replace(/^[^:]+:\s*/, ""))
+  );
+  // A lightened version of the tag color, so the accent bar shows up on the dark tooltip
+  tip.style.setProperty("--goal", `color-mix(in srgb, var(--${key}) 55%, #fff)`);
+  tip.dataset.goal = "pill-" + key;
+  tip.hidden = false;
+
+  const rect = pill.getBoundingClientRect();
+  const margin = 8;
+  const w = tip.offsetWidth;
+  const h = tip.offsetHeight;
+  const left = Math.min(Math.max(margin, rect.left), window.innerWidth - w - margin);
+  let top = rect.bottom + 8;
+  if (top + h > window.innerHeight - margin) top = Math.max(margin, rect.top - h - 8);
+  tip.style.left = left + "px";
+  tip.style.top = top + "px";
 }
 
 function selectedFilter() {
