@@ -10,11 +10,11 @@ const DATA_FILE = "Data/CAF Action Steps - CAF Action Steps.csv";
 
 const GOAL_COLORS = [
   "#332288", // 1st goal in the file
-  "#117733", // 2nd
-  "#44AA99", // 3rd
-  "#1E87BB", // 4th
-  "#EA9927", // 5th
-  "#CC6677", // 6th
+  "#005D1E", // 2nd
+  "#067575", // 3rd
+  "#0D7BB3", // 4th
+  "#826A16", // 5th
+  "#AB489A", // 6th
   "#882255", // 7th
 ];
 
